@@ -1,0 +1,30 @@
+Package: ASPENGLMS
+Type: Package
+Title: Beta-Binomial GLMMs for Allelic Imbalance
+Version: 0.0.0.9000
+Authors@R: c(person(given = "ASPEN", family = "GLMS Team", role = c("aut", "cre"),
+    email = "todo@example.com"))
+Description: Helpers for fitting beta-binomial generalized linear mixed models
+    to allelic counts stored in SingleCellExperiment objects, with empirical
+    Bayes shrinkage and reproducible pipelines inspired by the ASPEN project.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    SingleCellExperiment,
+    SummarizedExperiment,
+    Matrix,
+    glmmTMB,
+    tibble,
+    dplyr,
+    tidyr,
+    future,
+    future.apply,
+    ashr,
+    apeglm,
+    stats,
+    methods
+Suggests:
+    testthat (>= 3.0.0),
+    ggplot2
+Config/testthat/edition: 3

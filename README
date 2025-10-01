@@ -1,4 +1,31 @@
-This directory will try to write some codes which use the GLM model incorproating with the shrinkage for parameters estimation which can be seen as an improved version of 
-the ASPEN but with the merit that the GLMM can output the explicit parameter estimation for the sex or age condition effect. 
+# ASPEN_GLMS
 
+This project prototypes beta-binomial generalized linear (mixed) models for allele-specific expression, inspired by the ASPEN pipeline but targeted at coefficient-wise inference (sex, age, cell type) per gene.
 
+## Getting started
+- Ensure an R installation (>= 4.3).  
+- Restore dependencies with `renv::init()` followed by `renv::restore()` once the package list is populated.  
+- Install modelling dependencies manually if needed: `glmmTMB`, `ashr`, `apeglm`, `SingleCellExperiment`, `Matrix`, `future`, `future.apply`, `tibble`, `dplyr`, `tidyr`, `ggplot2`.
+
+## Repository layout
+- `R/` — package functions (`check_sce`, `filter_coverage`, `fit_glmm_bb`, shrinkage and plotting helpers).  
+- `inst/scripts/demo_pipeline.R` — end-to-end example that simulates data when bundled demo data is absent.  
+- `inst/extdata/` — place small example inputs such as `mini_ase.rds` here.  
+- `tests/testthat/` — unit tests covering validation, fitting, and shrinkage.  
+- `.github/workflows/R-CMD-check.yaml` — GitHub Actions configuration for CI.  
+- `scripts/` — scratch scripts from exploratory work (existing `GLMM.R` retained).
+
+## Usage sketch
+```r
+library(ASPENGLMS)
+library(SingleCellExperiment)
+
+sce <- readRDS("path/to/your_sce.rds")
+res <- fit_glmm_bb(sce, ~ sex + age + celltype_new, rand = "(1|sample)")
+sex_shrunk <- shrink_with_ash(res, term = "sexMale")
+contrasts <- tidy_contrasts(res)
+```
+
+Hyper-parameters such as coverage filters and random-effect structure are configurable via the function arguments. The outputs provide per-gene Wald statistics, empirical Bayes shrinkage (via `ashr`), and adjusted p-values.
+
+For a runnable example, execute `inst/scripts/demo_pipeline.R`. Results are written to `./results`.
