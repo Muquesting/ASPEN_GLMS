@@ -1,0 +1,4 @@
+This directory will try to write some codes which use the GLM model incorproating with the shrinkage for parameters estimation which can be seen as an improved version of 
+the ASPEN but with the merit that the GLMM can output the explicit parameter estimation for the sex or age condition effect. 
+
+
