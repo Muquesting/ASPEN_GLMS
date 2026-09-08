@@ -42,6 +42,11 @@ are required. It writes three tables and an optional diagnostic plot to `results
 | `contrasts.tsv` | Usable coefficient rows with BH-adjusted p-values, separately by term |
 | `coefficient-diagnostics.png` | Estimate/standard-error plot when ggplot2 is installed |
 
+![Synthetic coefficient diagnostics](docs/images/coefficient-diagnostics.png)
+
+*Output from the seeded synthetic demo on R 4.6.1/macOS. These are simulated
+coefficients, not biological findings or a calibration benchmark.*
+
 See the [walkthrough](docs/tutorial.md) for input construction and interpretation.
 
 ## Analyse your data
@@ -81,7 +86,10 @@ Failed genes remain explicit failure rows and are excluded from inference.
 
 The development `renv.lock` records the dependencies actually used by Linux CI.
 For a checked-out release, install `renv`, run `renv::restore(prompt = FALSE)`,
-and install this source package with `install.packages(".", repos = NULL, type = "source")`.
+then `renv::load()` to activate the project library, and install this source package
+with `install.packages(".", repos = NULL, type = "source")`. If CRAN binaries
+report a TMB version mismatch, rebuild `glmmTMB` with
+`install.packages("glmmTMB", type = "source")` before loading this package.
 Use the R and Bioconductor versions recorded in the lockfile; system build tools
 remain platform-specific. See [contributing](CONTRIBUTING.md) and the
 [roadmap](ROADMAP.md). Report reproducible bugs through GitHub Issues using
@@ -89,6 +97,6 @@ synthetic data. If the package is useful to your work, a star helps others find 
 
 ## Licence and citation
 
-MIT; see [LICENSE](LICENSE). Existing copyright notices and upstream attribution
+MIT; see [LICENSE.md](LICENSE.md). Existing copyright notices and upstream attribution
 are preserved. Cite this repository and the specific version you used (see
 [CITATION.cff](CITATION.cff)), together with the underlying statistical methods.

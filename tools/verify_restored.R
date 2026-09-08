@@ -1,0 +1,13 @@
+args <- commandArgs(trailingOnly = TRUE)
+stopifnot(length(args) == 1L, dir.exists(args[1]))
+.libPaths(c(normalizePath(args[1]), .Library), include.site = FALSE)
+options(repos = BiocManager::repositories())
+# CRAN binaries can lag TMB. Build the adapter against this restored version.
+options(warn = 2)
+install.packages("glmmTMB", type = "source", lib = args[1], Ncpus = 2)
+library(glmmTMB)
+options(warn = 0)
+install.packages(".", repos = NULL, type = "source", lib = args[1])
+source("inst/scripts/demo_pipeline.R")
+stopifnot(nrow(read.delim("results/sex_shrinkage.tsv")) > 0)
+writeLines(capture.output(sessionInfo()), "artifacts/restored-session-info.txt")

@@ -10,3 +10,6 @@
 ^ROADMAP\.md$
 ^tests/test\.ipynb$
 ^tests/data$
+^inst/extdata/\.gitkeep$
+^vignettes$
+^LICENSE\.md$

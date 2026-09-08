@@ -59,3 +59,15 @@ test_that("BH adjustment is performed separately for each coefficient", {
   res <- tidy_contrasts(tbl)
   expect_equal(res$fdr, c(0.02, 0.2, 0.06, 0.06))
 })
+
+test_that("parallel fitting restores the caller's future plan", {
+  sce <- toy_sce()
+  original <- future::plan()
+  on.exit(future::plan(original), add = TRUE)
+  future::plan(future::sequential)
+  before <- future::plan()
+  serial <- suppressWarnings(fit_glmm_bb(sce, ~ sex, rand = NULL, min_cells = 10))
+  parallel <- suppressWarnings(fit_glmm_bb(sce, ~ sex, rand = NULL, min_cells = 10, ncores = 2))
+  expect_equal(parallel, serial, tolerance = 1e-6)
+  expect_identical(class(future::plan()), class(before))
+})

@@ -9,7 +9,7 @@ permissions:
   contents: read
 concurrency:
   group: r-check-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
@@ -44,9 +44,14 @@ jobs:
             bioc::BiocVersion
       - name: Build glmmTMB against the installed TMB
         shell: Rscript {0}
-        run: install.packages("glmmTMB", type = "source", Ncpus = 2)
+        run: |
+          options(warn = 2)
+          install.packages("glmmTMB", type = "source", Ncpus = 2)
+          library(glmmTMB)
       - name: Generate documentation and dependency snapshot
         run: Rscript tools/ci_prepare.R
+      - name: Verify committed help matches the source
+        run: git diff --exit-code -- NAMESPACE man
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
@@ -59,6 +64,9 @@ jobs:
           files <- file.path("results", c("glmm_results.tsv", "sex_shrinkage.tsv", "contrasts.tsv"))
           stopifnot(all(file.exists(files)), all(file.info(files)$size > 0))
           stopifnot(nrow(read.delim(files[2])) > 0)
+      - name: Verify a clean dependency restore
+        if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
+        run: Rscript tools/ci_restore.R
       - name: Upload reproducibility evidence
         if: always()
         uses: actions/upload-artifact@v4
