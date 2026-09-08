@@ -9,4 +9,4 @@
 library(testthat)
 library(ASPENGLMS)
 
-test_check("ASPENGLMS")
+test_check("ASPENGLMS", stop_on_warning = TRUE)
