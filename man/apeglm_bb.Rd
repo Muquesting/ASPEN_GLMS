@@ -29,4 +29,6 @@ Beta-binomial shrinkage using apeglm
 Experimental fixed-effects interface, not a mixed-model shrinker.
 Dispersion is never guessed. Supply \code{mle} through \code{...} for an adaptive
 prior; otherwise apeglm uses its default prior. See the apeglm ASE tutorial.
+Uses apeglm's R beta-binomial optimizer and rejects unsuccessful diagnostics
+or invalid posterior estimates instead of returning them for inference.
 }

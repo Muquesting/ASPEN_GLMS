@@ -2,8 +2,9 @@ Package: ASPENGLMS
 Type: Package
 Title: Beta-Binomial GLMMs for Allelic Imbalance
 Version: 0.1.0
-Authors@R: c(person(given = "ASPEN", family = "GLMS Team", role = c("aut", "cre"),
-    email = "todo@example.com"))
+Authors@R: c(person(given = "Muqing", family = "Niu", role = "cre",
+    email = "muqingn@gmail.com"),
+    person(given = "ASPEN", family = "GLMS Team", role = "aut"))
 Description: Helpers for fitting beta-binomial generalized linear mixed models
     to allelic counts stored in SingleCellExperiment objects, with empirical
     Bayes shrinkage and reproducible pipelines inspired by the ASPEN project.

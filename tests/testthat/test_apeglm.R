@@ -18,5 +18,6 @@ test_that("experimental apeglm accepts a known synthetic concentration", {
   expect_equal(dim(fit$map), c(8L, 2L))
   expect_true(all(is.finite(fit$map)))
   expect_true(all(is.finite(fit$sd)))
+  expect_true(all(fit$diag[, "conv"] == 0))
   expect_true(all(fit$fsr >= 0 & fit$fsr <= 1))
 })

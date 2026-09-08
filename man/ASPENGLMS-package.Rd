@@ -18,11 +18,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: ASPEN GLMS Team \email{todo@example.com}
+\strong{Maintainer}: Muqing Niu \email{muqingn@gmail.com}
 
 Authors:
 \itemize{
-  \item ASPEN GLMS Team \email{todo@example.com}
+  \item ASPEN GLMS Team
 }
 
 }

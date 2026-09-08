@@ -10,6 +10,8 @@
 #' @details Experimental fixed-effects interface, not a mixed-model shrinker.
 #'   Dispersion is never guessed. Supply `mle` through `...` for an adaptive
 #'   prior; otherwise apeglm uses its default prior. See the apeglm ASE tutorial.
+#'   Uses apeglm's R beta-binomial optimizer and rejects unsuccessful diagnostics
+#'   or invalid posterior estimates instead of returning them for inference.
 #' @return Result object returned by `apeglm` containing MAP estimates and FSR.
 #' @export
 apeglm_bb <- function(Y_succ, Y_tot, design, coef, ...) {
@@ -49,6 +51,12 @@ apeglm_bb <- function(Y_succ, Y_tot, design, coef, ...) {
   }
   reserved <- intersect(names(dots), c("Y", "x", "coef", "log.lik", "method", "log.link"))
   if (length(reserved)) stop("Do not override: ", paste(reserved, collapse = ", "), call. = FALSE)
-  do.call(apeglm::apeglm, c(list(Y = Y_succ, x = design, log.lik = NULL,
-                               coef = coef, method = "betabinCR", log.link = FALSE), dots))
+  result <- do.call(apeglm::apeglm, c(list(Y = Y_succ, x = design, log.lik = NULL,
+                               coef = coef, method = "betabinR", log.link = FALSE), dots))
+  if (any(!is.finite(result$diag[, "conv"])) || any(result$diag[, "conv"] != 0) ||
+      any(!is.finite(result$map)) || any(!is.finite(result$sd)) || any(result$sd <= 0) ||
+      any(!is.finite(result$fsr)) || any(result$fsr < 0 | result$fsr > 1)) {
+    stop("apeglm optimization failed or returned invalid posterior estimates.", call. = FALSE)
+  }
+  result
 }

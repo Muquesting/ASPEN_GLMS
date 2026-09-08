@@ -3,6 +3,10 @@ message: "Please cite the repository and the exact release used in your analysis
 title: "ASPENGLMS: Beta-Binomial GLMMs for Allelic Imbalance"
 authors:
   - name: "ASPEN GLMS Team"
+contact:
+  - given-names: "Muqing"
+    family-names: "Niu"
+    email: "muqingn@gmail.com"
 repository-code: "https://github.com/Muquesting/ASPEN_GLMS"
 license: MIT
 type: software
