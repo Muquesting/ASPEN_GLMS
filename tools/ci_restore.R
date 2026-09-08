@@ -1,4 +1,5 @@
 # Restore into a separate library and verify in a fresh R process.
+source("tools/configure_repositories.R")
 library_path <- file.path(Sys.getenv("RUNNER_TEMP", tempdir()), "aspen-restored-library")
 dir.create(library_path, recursive = TRUE, showWarnings = FALSE)
 lockfile <- "renv.lock"

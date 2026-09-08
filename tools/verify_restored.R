@@ -1,7 +1,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 stopifnot(length(args) == 1L, dir.exists(args[1]))
 .libPaths(c(normalizePath(args[1]), .Library), include.site = FALSE)
-options(repos = BiocManager::repositories())
+source("tools/configure_repositories.R")
 # CRAN binaries can lag TMB. Build the adapter against this restored version.
 options(warn = 2)
 pinned_glmm <- as.character(utils::packageVersion("glmmTMB", lib.loc = args[1]))

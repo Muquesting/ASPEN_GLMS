@@ -1,5 +1,5 @@
 # Generate documentation and capture the actual dependency environment.
-options(repos = BiocManager::repositories())
+source("tools/configure_repositories.R")
 roxygen2::roxygenise(roclets = c("rd", "namespace"))
 dir.create("artifacts", showWarnings = FALSE)
 description <- read.dcf("DESCRIPTION")

@@ -85,7 +85,9 @@ Failed genes remain explicit failure rows and are excluded from inference.
 ## Reproduce and contribute
 
 The development `renv.lock` records the dependencies actually used by Linux CI.
-For a checked-out release, install `renv`, run `renv::restore(prompt = FALSE)`,
+For a checked-out release, install `renv`, run
+`source("tools/configure_repositories.R")` to select the tested public
+Bioconductor mirror, then run `renv::restore(prompt = FALSE)`,
 then `renv::load()` to activate the project library, and install this source package
 with `install.packages(".", repos = NULL, type = "source")`. If CRAN binaries
 report a TMB version mismatch, rebuild the locked version before loading this
