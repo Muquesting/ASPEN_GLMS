@@ -1,4 +1,11 @@
 tests/data/
 *.rds
-tests/data/
-*.rds
+.Rhistory
+.RData
+.Rproj.user/
+renv/library/
+renv/staging/
+artifacts/
+results/
+*.Rcheck/
+*.tar.gz

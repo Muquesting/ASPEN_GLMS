@@ -1,0 +1,10 @@
+# Generate documentation and capture the actual dependency environment.
+source("tools/configure_repositories.R")
+roxygen2::roxygenise(roclets = c("rd", "namespace"))
+dir.create("artifacts", showWarnings = FALSE)
+description <- read.dcf("DESCRIPTION")
+fields <- intersect(c("Depends", "Imports", "Suggests", "LinkingTo"), colnames(description))
+packages <- trimws(gsub("\\s*\\([^)]*\\)", "", unlist(strsplit(paste(description[1, fields], collapse = ","), ","))))
+packages <- setdiff(packages, c("", "R"))
+renv::snapshot(packages = packages, lockfile = "artifacts/renv.lock", prompt = FALSE)
+writeLines(capture.output(sessionInfo()), "artifacts/session-info.txt")

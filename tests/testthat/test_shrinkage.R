@@ -4,7 +4,7 @@ test_that("shrink_with_ash produces finite shrinkage", {
   sce <- toy_sce()
   res <- fit_glmm_bb(sce, formula_fixed = ~ sex, min_cells = 10, min_trials = 1, ncores = 1)
   sex_rows <- subset(res, term == "sexMale" & converged)
-  skip_if(nrow(sex_rows) == 0, "No converged sex coefficients in toy data")
+  expect_gt(nrow(sex_rows), 0)
   shrunk <- shrink_with_ash(res, term = "sexMale")
   expect_true(all(is.finite(shrunk$beta_shrunk)))
   expect_true(all(shrunk$lfsr >= 0 & shrunk$lfsr <= 1))

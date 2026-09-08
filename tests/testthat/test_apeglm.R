@@ -1,0 +1,23 @@
+test_that("experimental apeglm requires explicit valid concentration parameters", {
+  sce <- toy_sce()
+  successes <- as.matrix(SummarizedExperiment::assay(sce, "a1"))
+  totals <- as.matrix(SummarizedExperiment::assay(sce, "tot"))
+  design <- stats::model.matrix(~ sex, data = as.data.frame(SummarizedExperiment::colData(sce)))
+  expect_error(apeglm_bb(successes, totals, design, 2), "externally estimated theta")
+  expect_error(apeglm_bb(successes, totals, design, 2, param = cbind(-1, totals)), "positive")
+  expect_error(apeglm_bb(successes, totals, design, "absent", param = cbind(20, totals)), "identify")
+})
+
+test_that("experimental apeglm accepts a known synthetic concentration", {
+  set.seed(903)
+  design <- cbind("(Intercept)" = 1, treatment = rep(c(0, 1), each = 20))
+  totals <- matrix(40, nrow = 8, ncol = 40)
+  probabilities <- matrix(stats::rbeta(320, 10, 10), nrow = 8)
+  successes <- matrix(stats::rbinom(320, totals, probabilities), nrow = 8)
+  fit <- apeglm_bb(successes, totals, design, "treatment", param = cbind(20, totals))
+  expect_equal(dim(fit$map), c(8L, 2L))
+  expect_true(all(is.finite(fit$map)))
+  expect_true(all(is.finite(fit$sd)))
+  expect_true(all(fit$diag[, "conv"] == 0))
+  expect_true(all(fit$fsr >= 0 & fit$fsr <= 1))
+})

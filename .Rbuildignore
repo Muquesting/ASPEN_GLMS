@@ -1,0 +1,15 @@
+^\.github$
+^renv\.lock$
+^renv$
+^artifacts$
+^results$
+^tools$
+^docs$
+^CITATION\.cff$
+^CONTRIBUTING\.md$
+^ROADMAP\.md$
+^tests/test\.ipynb$
+^tests/data$
+^inst/extdata/\.gitkeep$
+^vignettes$
+^LICENSE\.md$
