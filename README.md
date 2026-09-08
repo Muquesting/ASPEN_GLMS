@@ -88,8 +88,8 @@ The development `renv.lock` records the dependencies actually used by Linux CI.
 For a checked-out release, install `renv`, run `renv::restore(prompt = FALSE)`,
 then `renv::load()` to activate the project library, and install this source package
 with `install.packages(".", repos = NULL, type = "source")`. If CRAN binaries
-report a TMB version mismatch, rebuild `glmmTMB` with
-`install.packages("glmmTMB", type = "source")` before loading this package.
+report a TMB version mismatch, rebuild the locked version before loading this
+package: `renv::install(paste0("glmmTMB@", packageVersion("glmmTMB")), type = "source", rebuild = TRUE)`.
 Use the R and Bioconductor versions recorded in the lockfile; system build tools
 remain platform-specific. See [contributing](CONTRIBUTING.md) and the
 [roadmap](ROADMAP.md). Report reproducible bugs through GitHub Issues using

@@ -4,7 +4,10 @@ stopifnot(length(args) == 1L, dir.exists(args[1]))
 options(repos = BiocManager::repositories())
 # CRAN binaries can lag TMB. Build the adapter against this restored version.
 options(warn = 2)
-install.packages("glmmTMB", type = "source", lib = args[1], Ncpus = 2)
+pinned_glmm <- as.character(utils::packageVersion("glmmTMB", lib.loc = args[1]))
+renv::install(paste0("glmmTMB@", pinned_glmm), library = args[1],
+              type = "source", rebuild = TRUE, dependencies = character(), prompt = FALSE)
+stopifnot(as.character(utils::packageVersion("glmmTMB", lib.loc = args[1])) == pinned_glmm)
 library(glmmTMB)
 options(warn = 0)
 install.packages(".", repos = NULL, type = "source", lib = args[1])
