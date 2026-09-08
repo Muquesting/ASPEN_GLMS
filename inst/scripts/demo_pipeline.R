@@ -10,37 +10,31 @@ if (!requireNamespace("ASPENGLMS", quietly = TRUE)) {
 }
 
 # helper to simulate a tiny dataset when bundled demo data is absent
-simulate_demo_sce <- function(n_genes = 50L, n_cells = 120L, n_samples = 6L) {
+simulate_demo_sce <- function(n_genes = 24L, n_cells = 480L, n_samples = 24L) {
   set.seed(42)
-  cell_sample <- sample(paste0("sample", seq_len(n_samples)), n_cells, replace = TRUE)
-  sex <- sample(c("Female", "Male"), n_cells, replace = TRUE)
-  age <- sample(c("Young", "Aged"), n_cells, replace = TRUE)
-  celltype <- sample(c("T", "B", "Mono"), n_cells, replace = TRUE)
-
-  # simulate total counts and reference successes
-  tot <- matrix(rnbinom(n_genes * n_cells, size = 10, mu = 20), nrow = n_genes)
-  baseline <- matrix(stats::plogis(rnorm(n_genes * n_cells, sd = 0.5)), nrow = n_genes)
-  male_shift <- ifelse(sex == "Male", 0.2, -0.2)
-  prob_ref <- baseline * stats::plogis(male_shift)
-  prob_ref <- pmin(pmax(prob_ref, 1e-4), 1 - 1e-4)
-  a1 <- matrix(rbinom(n_genes * n_cells, size = as.vector(tot), prob = as.vector(prob_ref)),
-               nrow = n_genes)
-  a2 <- tot - a1
-
-  rownames(tot) <- rownames(a1) <- rownames(a2) <- paste0("gene", seq_len(n_genes))
-  colnames(tot) <- colnames(a1) <- colnames(a2) <- paste0("cell", seq_len(n_cells))
-
-  sce <- SingleCellExperiment::SingleCellExperiment(
-    assays = list(a1 = a1, a2 = a2, tot = tot),
-    colData = data.frame(
-      sex = factor(sex, levels = c("Female", "Male")),
-      age = factor(age, levels = c("Young", "Aged")),
-      celltype_new = celltype,
-      sample = factor(cell_sample)
-    )
+  sample_index <- rep(seq_len(n_samples), length.out = n_cells)
+  donor_sex <- rep(c("Female", "Male"), length.out = n_samples)
+  donor_age <- rep(rep(c("Young", "Aged"), each = 2), length.out = n_samples)
+  sex <- factor(donor_sex[sample_index], levels = c("Female", "Male"))
+  age <- factor(donor_age[sample_index], levels = c("Young", "Aged"))
+  celltype <- factor(rep(c("T", "B", "Mono"), length.out = n_cells))
+  total <- matrix(rnbinom(n_genes * n_cells, size = 20, mu = 40), nrow = n_genes)
+  a1 <- matrix(0, nrow = n_genes, ncol = n_cells)
+  for (gene in seq_len(n_genes)) {
+    donor_effect <- rnorm(n_samples, sd = 0.6)
+    eta <- -0.2 + 0.5 * (sex == "Male") - 0.2 * (age == "Aged") +
+      0.15 * (celltype == "B") + donor_effect[sample_index]
+    mean_prob <- plogis(eta)
+    prob <- rbeta(n_cells, mean_prob * 20, (1 - mean_prob) * 20)
+    a1[gene, ] <- rbinom(n_cells, total[gene, ], prob)
+  }
+  dimnames(total) <- dimnames(a1) <- list(paste0("gene", seq_len(n_genes)),
+                                         paste0("cell", seq_len(n_cells)))
+  SingleCellExperiment::SingleCellExperiment(
+    assays = list(a1 = a1, a2 = total - a1, tot = total),
+    colData = S4Vectors::DataFrame(sex = sex, age = age, celltype_new = celltype,
+      sample = factor(paste0("sample", sample_index)))
   )
-
-  sce
 }
 
 sce_path <- system.file("extdata", "mini_ase.rds", package = "ASPENGLMS", mustWork = FALSE)
@@ -60,16 +54,11 @@ fit_tbl <- ASPENGLMS::fit_glmm_bb(
   ncores = 1
 )
 
-if (!nrow(fit_tbl)) {
+if (!nrow(fit_tbl) || !any(fit_tbl$converged)) {
   stop("No model fits were produced. Check coverage thresholds or input data.", call. = FALSE)
 }
 
-sex_shrunk <- tryCatch({
-  ASPENGLMS::shrink_with_ash(fit_tbl, term = "sexMale")
-}, error = function(e) {
-  warning("Shrinkage step failed: ", conditionMessage(e))
-  NULL
-})
+sex_shrunk <- ASPENGLMS::shrink_with_ash(fit_tbl, term = "sexMale")
 
 contrasts <- ASPENGLMS::tidy_contrasts(fit_tbl)
 
@@ -91,3 +80,9 @@ if (nrow(contrasts)) {
 }
 
 message("Demo pipeline completed. Results written to ./results.")
+
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot <- ASPENGLMS::plot_coefficient_diagnostics(fit_tbl, "sexMale")
+  ggplot2::ggsave(file.path("results", "coefficient-diagnostics.png"), plot,
+                 width = 7, height = 4.5, dpi = 140)
+}

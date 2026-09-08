@@ -9,8 +9,11 @@
 #' @param ncores Number of workers for parallel fitting (`future.apply`).
 #' @return A tibble with one row per gene/term combination containing estimates.
 #' @details The function filters genes by coverage, fits `glmmTMB` models and
-#' returns Wald statistics. Genes failing to converge are reported with
+#' returns Wald statistics. Covariates must exist in `colData(sce)` and be
+#' complete. Optimizer success, a positive-definite Hessian and finite
+#' coefficient statistics are required. Genes failing these checks are reported with
 #' `converged = FALSE` and contain an error message in the `error` column.
+#' @export
 fit_glmm_bb <- function(
   sce,
   formula_fixed = ~ sex + age + celltype_new + sex:age,
@@ -21,6 +24,35 @@ fit_glmm_bb <- function(
   ncores = 1
 ) {
   check_sce(sce)
+  check_positive_integer(ncores, "ncores")
+  if (!inherits(formula_fixed, "formula") || length(formula_fixed) != 2L) {
+    stop("`formula_fixed` must be a one-sided formula.", call. = FALSE)
+  }
+  if (!is.null(rand) && (!is.character(rand) || length(rand) != 1L || is.na(rand))) {
+    stop("`rand` must be NULL or a single string.", call. = FALSE)
+  }
+  fixed_rhs <- paste(deparse(formula_fixed[[2L]]), collapse = " ")
+  random_part <- if (!is.null(rand) && nzchar(rand)) paste("+", rand) else ""
+  model_formula <- stats::as.formula(
+    paste0("cbind(a1, tot - a1) ~ ", fixed_rhs, " ", random_part),
+    env = environment(formula_fixed)
+  )
+  required_cols <- all.vars(stats::as.formula(
+    paste0("~ ", fixed_rhs, " ", random_part), env = environment(formula_fixed)
+  ))
+  col_df <- as.data.frame(SummarizedExperiment::colData(sce))
+  missing_cols <- setdiff(required_cols, names(col_df))
+  if (length(missing_cols)) {
+    stop("Missing colData columns: ", paste(missing_cols, collapse = ", "), call. = FALSE)
+  }
+  if (length(required_cols) && any(!stats::complete.cases(col_df[, required_cols, drop = FALSE]))) {
+    stop("Model covariates must not contain missing values.", call. = FALSE)
+  }
+  for (column in required_cols) {
+    if (is.numeric(col_df[[column]]) && any(!is.finite(col_df[[column]]))) {
+      stop("Model covariates must be finite.", call. = FALSE)
+    }
+  }
 
   if (!requireNamespace("glmmTMB", quietly = TRUE)) {
     stop("Package `glmmTMB` is required for model fitting.", call. = FALSE)
@@ -44,16 +76,6 @@ fit_glmm_bb <- function(
   col_df <- as.data.frame(SummarizedExperiment::colData(sce_filt))
   col_df$cell_id <- colnames(sce_filt)
 
-  fixed_rhs <- paste(deparse(formula_fixed), collapse = " ")
-  fixed_rhs <- trimws(sub("^~", "", fixed_rhs))
-  if (!nzchar(fixed_rhs)) {
-    fixed_rhs <- "1"
-  }
-  random_part <- if (!is.null(rand) && nzchar(rand)) paste("+", rand) else ""
-  model_formula <- stats::as.formula(
-    paste0("cbind(a1, tot - a1) ~ ", fixed_rhs, " ", random_part)
-  )
-
   genes <- rownames(sce_filt)
   if (is.null(genes)) {
     genes <- as.character(seq_len(nrow(sce_filt)))
@@ -62,9 +84,10 @@ fit_glmm_bb <- function(
   assay_a1 <- SummarizedExperiment::assay(sce_filt, "a1")
   assay_tot <- SummarizedExperiment::assay(sce_filt, "tot")
 
-  fit_one <- function(g) {
-    successes <- as.numeric(assay_a1[g, ])
-    totals <- as.numeric(assay_tot[g, ])
+  fit_one <- function(i) {
+    g <- genes[[i]]
+    successes <- as.numeric(assay_a1[i, ])
+    totals <- as.numeric(assay_tot[i, ])
     keep <- totals >= min_trials
     if (sum(keep) < min_cells) {
       return(NULL)
@@ -77,6 +100,8 @@ fit_glmm_bb <- function(
     tryCatch({
       model <- glmmTMB::glmmTMB(model_formula, family = family, data = df)
       cond <- summary(model)$coefficients$cond
+      problem <- fit_diagnostic_error(model, cond)
+      if (!is.null(problem)) stop(problem, call. = FALSE)
       tibble::tibble(
         gene = g,
         term = rownames(cond),
@@ -102,13 +127,14 @@ fit_glmm_bb <- function(
   }
 
   if (ncores > 1) {
-    future::plan(future::multisession, workers = ncores)
+    old_plan <- future::plan()
     on.exit({
-      future::plan(future::sequential)
+      future::plan(old_plan)
     }, add = TRUE)
-    fits <- future.apply::future_lapply(genes, fit_one)
+    future::plan(future::multisession, workers = ncores)
+    fits <- future.apply::future_lapply(seq_along(genes), fit_one, future.seed = TRUE)
   } else {
-    fits <- lapply(genes, fit_one)
+    fits <- lapply(seq_along(genes), fit_one)
   }
 
   non_null <- Filter(Negate(is.null), fits)
@@ -118,4 +144,20 @@ fit_glmm_bb <- function(
   }
 
   dplyr::bind_rows(non_null)
+}
+
+fit_diagnostic_error <- function(model, coefficients) {
+  if (!isTRUE(model$fit$convergence == 0L)) {
+    return(paste("Optimizer did not converge:", paste(model$fit$message, collapse = "; ")))
+  }
+  if (!isTRUE(model$sdr$pdHess)) return("Hessian is not positive definite.")
+  needed <- c("Estimate", "Std. Error", "z value", "Pr(>|z|)")
+  if (!is.matrix(coefficients) || !nrow(coefficients) ||
+      !all(needed %in% colnames(coefficients))) return("Coefficient statistics are missing.")
+  if (any(!is.finite(coefficients[, needed, drop = FALSE])) ||
+      any(coefficients[, "Std. Error"] <= 0) ||
+      any(coefficients[, "Pr(>|z|)"] < 0 | coefficients[, "Pr(>|z|)"] > 1)) {
+    return("Coefficient statistics are invalid or non-finite.")
+  }
+  NULL
 }

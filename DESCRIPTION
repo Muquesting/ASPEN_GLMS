@@ -1,7 +1,7 @@
 Package: ASPENGLMS
 Type: Package
 Title: Beta-Binomial GLMMs for Allelic Imbalance
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c(person(given = "ASPEN", family = "GLMS Team", role = c("aut", "cre"),
     email = "todo@example.com"))
 Description: Helpers for fitting beta-binomial generalized linear mixed models
@@ -9,7 +9,6 @@ Description: Helpers for fitting beta-binomial generalized linear mixed models
     Bayes shrinkage and reproducible pipelines inspired by the ASPEN project.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Imports:
     SingleCellExperiment,
     SummarizedExperiment,
@@ -17,14 +16,21 @@ Imports:
     glmmTMB,
     tibble,
     dplyr,
-    tidyr,
     future,
     future.apply,
     ashr,
     apeglm,
     stats,
-    methods
+    rlang
 Suggests:
     testthat (>= 3.0.0),
-    ggplot2
+    ggplot2,
+    S4Vectors,
+    roxygen2,
+    rcmdcheck,
+    renv,
+    BiocManager
 Config/testthat/edition: 3
+URL: https://github.com/Muquesting/ASPEN_GLMS
+BugReports: https://github.com/Muquesting/ASPEN_GLMS/issues
+Roxygen: list(markdown = TRUE)

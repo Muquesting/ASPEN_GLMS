@@ -4,6 +4,7 @@
 #' @param term Coefficient name to shrink (e.g. "sexMale").
 #' @param ... Additional arguments passed to `ashr::ash`.
 #' @return Tibble with original and shrunk estimates plus local false sign rate.
+#' @export
 shrink_with_ash <- function(fit_tbl, term, ...) {
   if (!requireNamespace("ashr", quietly = TRUE)) {
     stop("Package `ashr` is required for shrinkage.", call. = FALSE)
@@ -18,8 +19,10 @@ shrink_with_ash <- function(fit_tbl, term, ...) {
     )
   }
 
-  subset <- fit_tbl[fit_tbl$converged & fit_tbl$term == term, , drop = FALSE]
-  subset <- subset[!is.na(subset$estimate) & !is.na(subset$std_error), , drop = FALSE]
+  usable <- fit_tbl$converged %in% TRUE & !is.na(fit_tbl$term) &
+    fit_tbl$term == term & is.finite(fit_tbl$estimate) &
+    is.finite(fit_tbl$std_error) & fit_tbl$std_error > 0
+  subset <- fit_tbl[which(usable), , drop = FALSE]
 
   if (nrow(subset) == 0) {
     stop("No converged coefficients found for the requested term.", call. = FALSE)

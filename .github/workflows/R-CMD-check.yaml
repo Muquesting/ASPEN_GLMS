@@ -1,36 +1,63 @@
 name: R-CMD-check
-
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         config:
-          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,  r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: macos-latest,   r: 'release'}
-
+          - {os: ubuntu-latest, r: devel, http-user-agent: release}
+          - {os: ubuntu-latest, r: release}
+          - {os: windows-latest, r: release}
+          - {os: macos-latest, r: release}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-
+      R_KEEP_PKG_SOURCE: 'yes'
+      NOT_CRAN: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
           needs: check
+      - name: Generate documentation and dependency snapshot
+        run: Rscript tools/ci_prepare.R
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
+          error-on: '"warning"'
+      - name: Install and run public demo
+        shell: Rscript {0}
+        run: |
+          install.packages(".", repos = NULL, type = "source")
+          source("inst/scripts/demo_pipeline.R")
+          files <- file.path("results", c("glmm_results.tsv", "sex_shrinkage.tsv", "contrasts.tsv"))
+          stopifnot(all(file.exists(files)), all(file.info(files)$size > 0))
+          stopifnot(nrow(read.delim(files[2])) > 0)
+      - name: Upload reproducibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.config.os }}-${{ matrix.config.r }}
+          path: |
+            artifacts/
+            man/
+            NAMESPACE
+            results/
+          retention-days: 30
