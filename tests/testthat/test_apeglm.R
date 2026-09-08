@@ -20,4 +20,3 @@ test_that("experimental apeglm accepts a known synthetic concentration", {
   expect_true(all(is.finite(fit$sd)))
   expect_true(all(fit$fsr >= 0 & fit$fsr <= 1))
 })
-
