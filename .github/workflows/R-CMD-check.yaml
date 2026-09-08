@@ -36,6 +36,15 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           needs: check
+          extra-packages: |
+            any::cpp11
+            any::RcppArmadillo
+            any::RcppEigen
+            any::RcppNumerical
+            bioc::BiocVersion
+      - name: Build glmmTMB against the installed TMB
+        shell: Rscript {0}
+        run: install.packages("glmmTMB", type = "source", Ncpus = 2)
       - name: Generate documentation and dependency snapshot
         run: Rscript tools/ci_prepare.R
       - uses: r-lib/actions/check-r-package@v2

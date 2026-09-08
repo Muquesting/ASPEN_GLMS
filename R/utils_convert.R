@@ -21,7 +21,9 @@ inv_logit <- function(x) {
 #' Convert logit coefficient to allelic ratio
 #'
 #' @param beta Value on the logit scale (e.g. model coefficient).
-#' @return Allelic ratio between 0 and 1.
+#' @return Inverse-logit between 0 and 1. This is a baseline allelic probability
+#'   for an intercept, not a group probability for a non-intercept coefficient.
+#'   Use the complete linear predictor to obtain group probabilities.
 #' @export
 allelic_ratio_from_logit <- function(beta) {
   inv_logit(beta)

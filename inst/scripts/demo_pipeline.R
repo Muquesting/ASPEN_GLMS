@@ -17,7 +17,7 @@ simulate_demo_sce <- function(n_genes = 24L, n_cells = 480L, n_samples = 24L) {
   donor_age <- rep(rep(c("Young", "Aged"), each = 2), length.out = n_samples)
   sex <- factor(donor_sex[sample_index], levels = c("Female", "Male"))
   age <- factor(donor_age[sample_index], levels = c("Young", "Aged"))
-  celltype <- factor(rep(c("T", "B", "Mono"), length.out = n_cells))
+  celltype <- factor(sample(c("T", "B", "Mono"), n_cells, replace = TRUE))
   total <- matrix(rnbinom(n_genes * n_cells, size = 20, mu = 40), nrow = n_genes)
   a1 <- matrix(0, nrow = n_genes, ncol = n_cells)
   for (gene in seq_len(n_genes)) {
